@@ -2,20 +2,26 @@ package sockets;
 
 import java.awt.event.ActionEvent;
 
+
 import java.awt.event.ActionListener;
-import java.io.DataOutputStream;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import java.net.*;
+import java.util.ArrayList;
 
 public class Cliente {
 
@@ -33,8 +39,6 @@ public class Cliente {
 
 	class MarcoCliente extends JFrame{
 		
-		
-
 		public MarcoCliente(){
 			
 			setBounds(600,300,280,350);
@@ -44,24 +48,79 @@ public class Cliente {
 			add(milamina);
 			
 			setVisible(true);
+			
+			addWindowListener(new EnvioOnline());
+			
 			}	
 		
 	}
+	
+	
+	// ------------------   ENVIO DE SEÑAL ONLINE ------------------
+	class EnvioOnline extends WindowAdapter{
+		
+		public void windowOpened(WindowEvent e) {
+			
+			try {
+				
+				Socket miSocket = new Socket("192.168.1.42", 9999);
+				
+				PaqueteEnvio datos = new PaqueteEnvio();
+				
+				datos.setMensaje("online");
+				
+				ObjectOutputStream paquete_datos = new ObjectOutputStream(miSocket.getOutputStream());
+				
+				paquete_datos.writeObject(datos);
+				
+				miSocket.close();
+				
+				
+			} catch (Exception e2) {
+				System.out.println("Error en EnvioOnline" +e2.getMessage());
+			}
+			
+		}
+		
+	}
+	
+	// -----------------------------------//
 
-	class LaminaMarcoCliente extends JPanel{
+	
+	
+
+	/*
+	 * IMPLEMENTAMOS RUNNABLE PARA USAR HILOS Y HACER QUE EL CLIENTE ESTE A LA ESCUCHA
+	 */
+	class LaminaMarcoCliente extends JPanel  implements Runnable{
 		
 
 		public LaminaMarcoCliente(){
 			
-			nick = new JTextField(5);
+			String nick_usuario = JOptionPane.showInputDialog("Introduce tu nick: ");
+					
+			JLabel n_nick = new JLabel("Nick: ");
+			
+			add(n_nick);
+			
+			nick = new JLabel();
+			
+			nick.setText(nick_usuario);
 			
 			add(nick);
 		
-			JLabel texto=new JLabel(" * CHAT *");
+			JLabel texto=new JLabel("Online: ");
 			
 			add(texto);
 			
-			ip = new JTextField(8);
+			ip = new JComboBox();
+			
+			/*
+			lista estatica desplegable
+			ip.addItem("192.168.1.42");
+			ip.addItem("localhost");
+			ip.addItem("User3");
+			 */
 						
 			add(ip);
 			
@@ -80,6 +139,13 @@ public class Cliente {
 			
 			add(miboton);	
 			
+			/*
+			 * Ponemos en funcionamiento el hilo de escucha
+			 */
+			
+			Thread miHilo = new Thread(this);
+			miHilo.start();
+			
 		}
 		
 		
@@ -90,8 +156,10 @@ public class Cliente {
 				
 				//System.out.println(campo1.getText());
 				
+				campoChat.append("\n" + campo1.getText());
+				
 				try {
-					Socket misocket = new Socket("localhost", 9999);   //los argumentos que necesita son dirección de red(ip) y puerto
+					Socket misocket = new Socket("192.168.1.42", 9999);   //los argumentos que necesita son dirección de red(ip) y puerto
 					
 					
 					PaqueteEnvio datos = new PaqueteEnvio();
@@ -100,7 +168,7 @@ public class Cliente {
 					 * Empaquetamos lo que queremos enviar al destinatario dentro de la variable datos
 					 */
 					datos.setNick(nick.getText());
-					datos.setIp(ip.getText());
+					datos.setIp(ip.getSelectedItem().toString());
 					datos.setMensaje(campo1.getText()); //mensaje
 					
 					/*
@@ -111,10 +179,11 @@ public class Cliente {
 					
 					paquete_datos.writeObject(datos);
 					
+					campo1.setText(null);
+									
 					misocket.close();
 					
-					
-					
+										
 			//		DataOutputStream flujo_salida = new DataOutputStream(misocket.getOutputStream()); //se le indica por dónde van a circular los datos
 					
 			//		flujo_salida.writeUTF(campo1.getText()); //recupera el texto que hay en el JTextField
@@ -138,16 +207,79 @@ public class Cliente {
 			
 			
 			
+	
+		
+		/*
+		 * NECESITAMOS QUE NUESTRA APLICACIÓN CLIENTE ESTÉ PERMANENTEMENTE A LA ESUCHA PARA PODER RECIBIR LOS MENSAJES QUE LE MANDA EL SERVIDOR :D (hilos)
+		 */
+		@Override
+		public void run() {
+			
+			try {
+				
+				ServerSocket servidor_cliente = new ServerSocket(9090); //Le indicamos que abra el puerto 9090 (el que le hemos indicado en el servidor) y esté a la escucha
+				
+				Socket cliente;
+				
+				PaqueteEnvio paquete_recibido;
+				
+				while(true) {
+					
+					cliente = servidor_cliente.accept(); //Estará aceptado todas las conexiones que le entren 
+					
+					ObjectInputStream flujo_entrada = new ObjectInputStream(cliente.getInputStream()); //Creamos un flujo de entrada capaz de transportar objetos (un paquete de datos en este caso)
+					
+					paquete_recibido = (PaqueteEnvio) flujo_entrada.readObject();
+					
+					
+					if (!paquete_recibido.getMensaje().equals("online")) {
+						
+						campoChat.append("\n" + paquete_recibido.getNick() + ": " + paquete_recibido.getMensaje()); //Mostramos por pantalla
+						
+					} else {
+						
+						//campoChat.append("\n" + paquete_recibido.getIps());
+						
+						ArrayList<String> IpsMenu = new ArrayList<String>();
+						
+						IpsMenu = paquete_recibido.getIps();
+						
+						ip.removeAllItems();
+						
+						for (String z: IpsMenu) {
+							ip.addItem(z);
+						}
+						
+					}
+					
+					
+					
+				}
+				
+				
+			} catch (Exception e) {
+				System.out.println("Error en el run() del cliente: "  +e.getMessage());
+			}
+			
+		}
+		
+		
+		
 		private JTextField campo1;
-		private JTextField nick;
-		private JTextField ip;
-
+		
+		private JLabel nick;
+		
+		private JComboBox ip;
 		
 		private JTextArea campoChat;
 		
 		private JButton miboton;
 		
+		
 	}
+	
+	
+	
 	
 	/*
 	 * Esta clase debe estar serializada para que al enviar el objeto este se convierta en 0 y 1 y se envíe por la red
@@ -158,9 +290,9 @@ public class Cliente {
 		private String ip;
 		private String mensaje;
 		
+		private ArrayList<String> ips;		
 		
-		
-		
+				
 		//Getters y Setters
 		public String getNick() {
 			return nick;
@@ -180,7 +312,12 @@ public class Cliente {
 		public void setMensaje(String mensaje) {
 			this.mensaje = mensaje;
 		}
-		
+		public ArrayList<String> getIps() {
+			return ips;
+		}
+		public void setIps(ArrayList<String> ips) {
+			this.ips = ips;
+		}
 		
 
 	}

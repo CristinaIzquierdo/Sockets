@@ -1,11 +1,14 @@
 package sockets;
 
 import java.awt.*;
+
 import java.io.DataInputStream;
 import java.io.IOError;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.*;
+import java.util.ArrayList;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -73,6 +76,8 @@ class MarcoServidor extends JFrame implements Runnable{
 			String ip;
 			String mensaje;
 			
+			ArrayList<String> listaIp = new ArrayList<String>();
+			
 			PaqueteEnvio paquete_recibido;
 			
 			/*
@@ -84,6 +89,7 @@ class MarcoServidor extends JFrame implements Runnable{
 			
 			Socket misocket = servidor.accept(); //aceptará las conexiones que le vengan del exterior gracias al método accept
 			
+						
 			ObjectInputStream paquete_datos = new ObjectInputStream(misocket.getInputStream()); //Creamos el flujo de datos de entrada
 			
 			paquete_recibido = (PaqueteEnvio) paquete_datos.readObject(); //Le decimos que lea el flujo de datos y lo que se encuentre lo almacene en paquete_recibido
@@ -108,15 +114,79 @@ class MarcoServidor extends JFrame implements Runnable{
 			
 		//	areatexto.append("\n" + mensaje_texto); //lo escribimos
 			
-			areatexto.append("\n" + nick + " dice: * " + mensaje + " * para " + ip);
 			
-			misocket.close(); //cerramos la conexión
-			
+				if (!mensaje.equals("online")) {
+				
+				areatexto.append("\n" + nick + " dice: * " + mensaje + " * para " + ip);
+				
+				
+				/*
+				 * AHORA ENVIAREMOS EL MENSAJE QUE NOS HA LLEGADO DE UN CLIENTE AL CLIENTE QUE LE ABREMOS INDICADO
+				 */
+				Socket enviaDestinatario = new Socket(ip, 9090);  //Tendemos un puente entre servidor y CLIENTE DESTINATARIO e indicamos que el puerto de entrada es el 9090
+				 
+				ObjectOutputStream paquete_reenvio = new ObjectOutputStream(enviaDestinatario.getOutputStream()); //Utilizamos el socket que acabamos de crear para mandar el paquete
+				
+				paquete_reenvio.writeObject(paquete_recibido); //Llenamos el flujo de salida con el paquete_recibido; que es el mensaje del cliente que envía
+				
+				
+				
+				/*
+				 * Cerramos todos los flujos
+				*/
+				paquete_reenvio.close();
+				
+				enviaDestinatario.close();
+				
+				misocket.close(); //cerramos la conexión
+				
+				} else {
+					 
+					//---------------------- DETECTA ONLINE ----------------------
+					InetAddress localizacion = misocket.getInetAddress();
+					
+					String ipRemota = localizacion.getHostAddress();
+				
+					System.out.println("Online: " +ipRemota);
+					
+					listaIp.add(ipRemota); //Llenamos el ArrayList con cada ip que nos llega
+					
+					paquete_recibido.setIps(listaIp);
+					
+					for (String z:listaIp) {
+						
+						System.out.println("Array: " +z);
+						
+						Socket enviaDestinatario = new Socket(z, 9090);  //Tendemos un puente entre servidor y CLIENTE DESTINATARIO e indicamos que el puerto de entrada es el 9090
+						 
+						ObjectOutputStream paquete_reenvio = new ObjectOutputStream(enviaDestinatario.getOutputStream()); //Utilizamos el socket que acabamos de crear para mandar el paquete
+						
+						paquete_reenvio.writeObject(paquete_recibido); //Llenamos el flujo de salida con el paquete_recibido; que es el mensaje del cliente que envía
+						
+						/*
+						 * Cerramos todos los flujos
+						*/
+						paquete_reenvio.close();
+						
+						enviaDestinatario.close();
+						
+						misocket.close(); //cerramos la conexión
+						
+						
+						
+					}
+					
+					
+					//------------------------------------------------------------//
+					
+				}
 			}
 			
 			
+			
+			
 		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
+			System.out.println("Error AQUI: "+ e);
 		}
 		
 	}
