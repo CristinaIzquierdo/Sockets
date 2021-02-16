@@ -26,8 +26,7 @@ import java.util.ArrayList;
 public class Cliente {
 
 	public static void main(String[] args) {
-			// TODO Auto-generated method stub
-			
+						
 			MarcoCliente mimarco=new MarcoCliente();
 			
 			mimarco.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -47,9 +46,11 @@ public class Cliente {
 			
 			add(milamina);
 			
+			addWindowListener(new EnvioOnline());
+			
 			setVisible(true);
 			
-			addWindowListener(new EnvioOnline());
+			
 			
 			}	
 		
@@ -63,7 +64,7 @@ public class Cliente {
 			
 			try {
 				
-				Socket miSocket = new Socket("192.168.1.42", 9999);
+				Socket miSocket = new Socket("192.168.1.48", 9999);
 				
 				PaqueteEnvio datos = new PaqueteEnvio();
 				
@@ -92,8 +93,7 @@ public class Cliente {
 	/*
 	 * IMPLEMENTAMOS RUNNABLE PARA USAR HILOS Y HACER QUE EL CLIENTE ESTE A LA ESCUCHA
 	 */
-	class LaminaMarcoCliente extends JPanel  implements Runnable{
-		
+	class LaminaMarcoCliente extends JPanel implements Runnable{
 
 		public LaminaMarcoCliente(){
 			
@@ -127,6 +127,7 @@ public class Cliente {
 			campoChat = new JTextArea(12,20);
 			
 			add(campoChat);
+		
 		
 			campo1=new JTextField(20);
 		

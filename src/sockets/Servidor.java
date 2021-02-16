@@ -17,9 +17,11 @@ import javax.swing.JTextArea;
 public class Servidor  {
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
+		
 		
 		MarcoServidor mimarco=new MarcoServidor();
+		mimarco.getContentPane().setBackground(new Color(224, 255, 255));
+		mimarco.getContentPane().setForeground(new Color(224, 255, 255));
 		
 		mimarco.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			
@@ -65,9 +67,6 @@ class MarcoServidor extends JFrame implements Runnable{
 	
 	@Override
 	public void run(){
-		
-	//	System.out.println("Estoy escuchando"); 
-		
 		
 		try {
 			ServerSocket servidor = new ServerSocket(9999);   //le indicamos el puerto que tiene que abrir (el mismo del cliente) este es el puerto que estará a la escucha
@@ -117,29 +116,29 @@ class MarcoServidor extends JFrame implements Runnable{
 			
 				if (!mensaje.equals("online")) {
 				
-				areatexto.append("\n" + nick + " dice: * " + mensaje + " * para " + ip);
+					areatexto.append("\n" + nick + " dice: * " + mensaje + " * para " + ip);
 				
 				
-				/*
-				 * AHORA ENVIAREMOS EL MENSAJE QUE NOS HA LLEGADO DE UN CLIENTE AL CLIENTE QUE LE ABREMOS INDICADO
-				 */
-				Socket enviaDestinatario = new Socket(ip, 9090);  //Tendemos un puente entre servidor y CLIENTE DESTINATARIO e indicamos que el puerto de entrada es el 9090
-				 
-				ObjectOutputStream paquete_reenvio = new ObjectOutputStream(enviaDestinatario.getOutputStream()); //Utilizamos el socket que acabamos de crear para mandar el paquete
-				
-				paquete_reenvio.writeObject(paquete_recibido); //Llenamos el flujo de salida con el paquete_recibido; que es el mensaje del cliente que envía
-				
-				
-				
-				/*
-				 * Cerramos todos los flujos
-				*/
-				paquete_reenvio.close();
-				
-				enviaDestinatario.close();
-				
-				misocket.close(); //cerramos la conexión
-				
+					/*
+					 * AHORA ENVIAREMOS EL MENSAJE QUE NOS HA LLEGADO DE UN CLIENTE AL CLIENTE QUE LE ABREMOS INDICADO
+					 */
+					Socket enviaDestinatario = new Socket(ip, 9090);  //Tendemos un puente entre servidor y CLIENTE DESTINATARIO e indicamos que el puerto de entrada es el 9090
+					 
+					ObjectOutputStream paquete_reenvio = new ObjectOutputStream(enviaDestinatario.getOutputStream()); //Utilizamos el socket que acabamos de crear para mandar el paquete
+					
+					paquete_reenvio.writeObject(paquete_recibido); //Llenamos el flujo de salida con el paquete_recibido; que es el mensaje del cliente que envía
+					
+					
+					
+					/*
+					 * Cerramos todos los flujos
+					*/
+					paquete_reenvio.close();
+					
+					enviaDestinatario.close();
+					
+					misocket.close(); //cerramos la conexión
+					
 				} else {
 					 
 					//---------------------- DETECTA ONLINE ----------------------
@@ -171,8 +170,6 @@ class MarcoServidor extends JFrame implements Runnable{
 						enviaDestinatario.close();
 						
 						misocket.close(); //cerramos la conexión
-						
-						
 						
 					}
 					
